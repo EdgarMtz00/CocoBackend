@@ -1,4 +1,4 @@
-#!C:\Users\alan5\Documents\CETI\8vo\Distribuidos\2do_Parcial\CocoBackend\venv\Scripts\python.exe
+#!C:\Users\manie\Documents\Coco\CocoBackend\venv\Scripts\python.exe
 # EASY-INSTALL-ENTRY-SCRIPT: 'pip==10.0.1','console_scripts','pip'
 __requires__ = 'pip==10.0.1'
 import re
