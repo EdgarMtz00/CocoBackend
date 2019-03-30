@@ -6,7 +6,6 @@ import json
 
 from query_to_json import to_json
 
-
 def _get_user(request: Request) -> Response:
     user_id = request.params.get('id', -1)
     if user_id == -1:
@@ -16,6 +15,8 @@ def _get_user(request: Request) -> Response:
             get_user: ResultProxy = db.execute('SELECT * from cocollector."Estado"')
             result = get_user.fetchall()
             return Response(status=200, body=to_json(result), content_type='text/json')
+            get_user = db.execute('SELECT * from cocollector."Usuario" where "ID"= ' + user_id)
+            return Response(status=200, body=json.dumps(get_user), content_type='text/json')
         except Exception:
             return Response(status=404)
 
