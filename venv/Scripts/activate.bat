@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set "VIRTUAL_ENV=C:\Users\alan5\PycharmProjects\CocoBackend\venv"
+set "VIRTUAL_ENV=C:\Users\alan5\Documents\CETI\8vo\Distribuidos\2do_Parcial\CocoBackend\venv"
 
 if not defined PROMPT (
     set "PROMPT=$P$G"
