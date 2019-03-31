@@ -18,6 +18,8 @@ if __name__ == '__main__':
         config.add_view(hello_world, route_name='hello')
         config.add_route('users', '/usuarios')
         config.add_view(user_entry, route_name='users')
+        config.add_route('order', '/orden')
+        config.add_view(user_entry, route_name='order')
         app = config.make_wsgi_app()
     server = make_server('0.0.0.0', 6543, app)
     server.serve_forever()
