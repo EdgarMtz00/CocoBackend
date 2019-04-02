@@ -21,7 +21,7 @@ def _get_order(request: Request) -> Response:
 
             get_order: ResultProxy = db.execute(stmt)
             result = get_order.fetchall()
-            return Response(status=200, body=to_json(result[0]), content_type='text/json')
+            return Response(status=200, body=to_json(result), content_type='text/json')
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
@@ -35,14 +35,15 @@ def _create_order(request: Request) -> Response:
                                 '"Fecha_pedido",'
                                 '"Direccion",'
                                 '"Usuario") VALUES (:total, :estado, :fecha_pedido, :direccion,'
-                                ':usuario, "Orden")')
+                                ':usuario)')
 
         stmt = stmt.bindparams(total=order_data['total'], estado=order_data['estado'],
                                fecha_pedido=order_data['fechaPedido'], direccion=order_data['direccion'],
-                               usuario=['usuario'])
+                               usuario=order_data['usuario'])
         db.execute(stmt)
         return Response(status=200)
-    except Exception:
+    except Exception as e:
+        print (e)
         return Response(status=400)
 
 
@@ -72,13 +73,26 @@ def _modify_order(request: Request) -> Response:
         return Response(status=404, content_type='text/json')
 
 
-def user_entry(request: Request):
+def _delete_order(request: Request) -> Response:
+    delete_data = request.json_body
+
+    try:
+        stmt: TextClause = text('DELETE FROM cocollector."Orden" where "ID" = :id').bindparams(id=delete_data['id'])
+        db.execute(stmt)
+        return Response(status=200, content_type='text/json')
+    except Exception as e:
+        print(e)
+        return Response(status=404, content_type='text/plain')
+
+def order_entry(request: Request):
     if request.method == 'GET':
         return _get_order(request)
     elif request.method == 'POST':
         return _create_order(request)
     elif request.method == 'PUT':
         return _modify_order(request)
+    elif request.method == 'DELETE':
+        return _delete_order(request)
     return Response(status=405, content_type='text/json')
 
 
