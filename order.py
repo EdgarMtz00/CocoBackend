@@ -7,7 +7,9 @@ from sqlalchemy.sql.elements import TextClause
 from database import db
 import json
 
+
 from query_to_json import to_json
+
 
 
 def _get_order(request: Request) -> Response:
@@ -21,6 +23,7 @@ def _get_order(request: Request) -> Response:
 
             get_order: ResultProxy = db.execute(stmt)
             result = get_order.fetchall()
+
             return Response(status=200, body=to_json(result), content_type='text/json')
         except Exception as e:
             print(e)
