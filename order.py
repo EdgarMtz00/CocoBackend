@@ -10,6 +10,14 @@ import json
 
 from query_to_json import to_json
 
+import decimal, datetime
+
+def alchemyencoder(obj):
+    """JSON encoder function for SQLAlchemy special classes."""
+    if isinstance(obj, datetime.date):
+        return obj.isoformat()
+    elif isinstance(obj, decimal.Decimal):
+        return float(obj)
 
 
 def _get_order(request: Request) -> Response:
@@ -18,13 +26,13 @@ def _get_order(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT * from cocollector."Orden" where "ID" = :id')
-            stmt = stmt.bindparams(id=order_id)
+            stmt: TextClause = text('SELECT * from cocollector."Orden"')
+
 
             get_order: ResultProxy = db.execute(stmt)
-            result = get_order.fetchall()
 
-            return Response(status=200, body=to_json(result), content_type='text/json')
+
+            return Response(status=200, body=json.dumps((dict[r] for r in get_order), default=alchemyencoder), content_type='text/json')
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
