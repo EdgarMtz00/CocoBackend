@@ -37,6 +37,33 @@ def _get_order(request: Request) -> Response:
             print(e)
             return Response(status=404, content_type='text/plain')
 
+def _modify_order(request: Request) -> Response:
+    try:
+        order_data = request.json_body
+        order_stmt = text('SELECT * from cocollector."Orden" where "ID" = :id')
+        order_stmt = order_stmt.bindparams(id=order_data['id'])
+        get_order: ResultProxy = db.execute(order_stmt)
+        order: dict = [dict(r) for r in get_order][0]
+        alchemyencoder(order)
+        if 'total' in order_data:
+            order['Total'] = order_data['total']
+        if 'estado' in order_data:
+            order['Status'] = order_data['estado']
+        if 'fechaPedido' in order_data:
+            order['Fecha_Pedido'] = order_data['fechaPedido']
+        if 'direccion' in order_data:
+            order['Direccion'] = order_data['direccion']
+        if 'usuario' in order_data:
+            order['Usuario'] = order_data['usuario']
+
+        update_stmt = text(
+            'UPDATE cocollector."Orden" SET "Total" = :total, "Status" = :estado, "Fecha_pedido" = :fechaPedido, "Direccion" = :direccion, "Usuario" = :usuario where "ID" = :id'
+        ).bindparams(total=order['Total'], estado=order['Status'], fechaPedido=order['Fecha_pedido'], direccion=order['Direccion'], usuario=order['Usuario'], id=order['ID'])
+        db.execute(update_stmt)
+
+    except Exception as e:
+        print(e)
+        return Response(status=404, content_type='text/json')
 
 def _create_order(request: Request) -> Response:
     try:
@@ -56,32 +83,6 @@ def _create_order(request: Request) -> Response:
     except Exception as e:
         print (e)
         return Response(status=400)
-
-
-def _modify_order(request: Request) -> Response:
-    try:
-        order_data = request.json_body
-        order_stmt = text('SELECT * from cocollector."Orden" where "ID" = :id').bindparams(id=order_data['id'])
-        order: dict = json.loads(to_json(db.execute(order_stmt)))
-        if 'total' in order_data:
-            order['Total'] = order_data['total']
-        if 'estado' in order_data:
-            order['Estado'] = order_data['estado']
-        if 'fecha_Pedido' in order_data:
-            order['Fecha_pedido'] = order_data['fecha_Pedido']
-        if 'direccion' in order_data:
-            order['Direccion'] = order_data['direccion']
-        if 'usuario' in order_data:
-            order['Usuario'] = order_data['contrasena']
-
-        update_stmt = text(
-            'UPDATE cocollector."Orden" SET "Total" = :total, "Estado" = :estado, "Fecha_pedido" = :fecha_Pedido, "Direccion" = :direccion, "Usuario" = :usuario where "ID" = :id'
-        ).bindparams(total=order['Total'], estado=order['Estado'], fecha_pedido=order['Fecha_pedido'], direccion=order['Direccion'], usuario=order['Usuario'])
-        db.execute(update_stmt)
-
-    except Exception as e:
-        print(e)
-        return Response(status=404, content_type='text/json')
 
 
 def _delete_order(request: Request) -> Response:
