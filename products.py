@@ -9,6 +9,8 @@ import json
 
 from query_to_json import to_json
 
+import decimal, datetime
+
 def alchemyencoder(obj):
     """JSON encoder function for SQLAlchemy special classes."""
     if isinstance(obj, datetime.date):
@@ -23,15 +25,15 @@ def _get_product(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT * from cocollector."Producto" where "ID_Producto" = :id')
+            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
             stmt = stmt.bindparams(id = product_id)
             
             get_product: ResultProxy = db.execute(stmt)
             
-            return Response(status=200, body=json.dumps([dict(r) for r in get_product][0], default=alchemyencoder), content_type='text/json')
+            return Response(status = 200, body = json.dumps([dict(r) for r in get_product][0], default = alchemyencoder), content_type = 'text/json')
         except Exception as e:
             print(e)
-            return Response(status=404, content_type='text/plain')
+            return Response(status = 404, content_type = 'text/plain')
 
 def _create_product(request: Request) -> Response:
     try:
@@ -50,13 +52,31 @@ def _create_product(request: Request) -> Response:
 
         db.execute(stmt)
 
-        return Response(status=200)
+        return Response(status = 200)
     except Exception:
-        return Response(status=400)
+        return Response(status = 400)
 
 def _modify_product(request: Request) -> Response:
     try:
         product_data = request.json_body
+        
+        stmt = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
+        stmt = stmt.bindparams(id = product_data['id'])
+        get_product: ResultProxy = db.execute(stmt)
+        product: dict = [dict(r) for r in get_product][0]
+        alchemyencoder(product)
+
+        if 'descripcion' in product_data:
+            product['Descripcion'] = product_data['descripcion']
+        if 'nombre' in product_data:
+            product['Nombre'] = product_data['nombre']
+        if 'precio' in product_data:
+           product['Precio'] = product_data['precio']
+        if 'stock' in product_data:
+            product['Stock'] = product_data['stock']
+        if 'categoria' in product_data:
+            product['Categoria'] = product_data['categoria']
+        
         
         stmt = text('UPDATE cocollector."Producto" SET'
                            '"Descripcion" = :descripcion,'
@@ -65,18 +85,18 @@ def _modify_product(request: Request) -> Response:
                            '"Stock" = :stock,'
                            '"Categoria" = :categoria WHERE "ID_Producto" = :id')
 
-        stmt = stmt.bindparams(descripcion = product_data['descripcion'],
-                                             nombre = product_data['nombre'], 
-                                             precio = product_data['precio'], 
-                                             stock = product_data['stock'], 
-                                             categoria = product_data['categoria'], 
-                                             id = product_data['id'])
+        stmt = stmt.bindparams(descripcion = product['Descripcion'],
+                                             nombre = product['Nombre'], 
+                                             precio = product['Precio'], 
+                                             stock = product['Stock'], 
+                                             categoria = product['Categoria'], 
+                                             id = product['ID_Producto'])
         db.execute(stmt)
 
-        return Response(status=200)
+        return Response(status = 200)
     except Exception as e:
         print(e)
-        return Response(status=404, content_type='text/json')
+        return Response(status = 404, content_type = 'text/json')
 
 def _delete_product(request: Request) -> Response:
     try:
@@ -86,10 +106,10 @@ def _delete_product(request: Request) -> Response:
 
         db.execute(stmt)
 
-        return Response(status=200)
+        return Response(status = 200)
     except Exception as e:
         print(e)
-        return Response(status=404, content_type='text/json')
+        return Response(status = 404, content_type = 'text/json')
 
 def product_entry(request: Request):
     if request.method == 'GET':
@@ -100,4 +120,4 @@ def product_entry(request: Request):
         return _modify_product(request)
     elif request.method == 'DELETE':
         return _delete_product(request)
-    return Response(status=405, content_type='text/json')
+    return Response(status = 405, content_type = 'text/json')
