@@ -4,6 +4,7 @@ from pyramid.response import Response
 
 from order import order_entry
 from users import user_entry
+from pyramid.renderers import JSON
 
 from products import product_entry
 
@@ -38,4 +39,3 @@ if __name__ == '__main__':
         app = config.make_wsgi_app()
     server = make_server('0.0.0.0', 6543, app)
     server.serve_forever()
-
