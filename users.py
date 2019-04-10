@@ -12,6 +12,8 @@ from query_to_json import to_json
 
 def _get_user(request: Request) -> Response:
     user_id = request.params.get('id', -1)
+    if request.authenticated_userid:
+        user_id = request.authenticated_userid
     if user_id == -1:
         return Response(status=404)
     else:
@@ -26,8 +28,8 @@ def _get_user(request: Request) -> Response:
             stmt = stmt.bindparams(id=user_id)
 
             get_user: ResultProxy = db.execute(stmt)
-            result = get_user.fetchall()
-            return Response(status=200, body=to_json(result[0]), content_type='text/json')
+            user_data = [dict(r) for r in get_user]
+            return Response(status=200, body=json.dumps(user_data[0]), content_type='text/json')
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
@@ -36,6 +38,7 @@ def _get_user(request: Request) -> Response:
 def _create_user(request: Request) -> Response:
     try:
         user_data = request.json_body
+        print(user_data)
         stmt: TextClause = text('INSERT into cocollector."Usuario"("Nombre_usuario",'
                                 '"Correo",'
                                 '"Contrasena",'
@@ -45,22 +48,27 @@ def _create_user(request: Request) -> Response:
                                 '"Tarjeta_credito",'
                                 '"Fecha_Expiracion",'
                                 '"Tipo") VALUES (:nombre_usuario, :correo, :contrasena, '
-                                ':nombre, :apellido_paterno, :apellido_materno, :tarjeta, :fecha_expiracion, "Usuario")')
+                                ":nombre, :apellido_paterno, :apellido_materno, :tarjeta, :fecha_expiracion, 'Usuario' )")
 
         stmt = stmt.bindparams(nombre_usuario=user_data['nombreUsuario'], correo=user_data['correo'],
-                               nombre=user_data['nombre'], apellido_paterno=user_data['apellidoPaterno'],
+                               contrasena=user_data['contrasena'], nombre=user_data['nombre'],
+                               apellido_paterno=user_data['apellidoPaterno'],
                                apellido_materno=['apellidoMaterno'], tarjeta=['tarjeta'],
-                               fecha_expiracion=user_data['fecha_expiracion'])
+                               fecha_expiracion=user_data['fechaExpiracion'])
         db.execute(stmt)
         return Response(status=200)
-    except Exception:
+    except Exception as e:
+        print(e)
         return Response(status=400)
 
 
 def _modify_user(request: Request) -> Response:
+    if request.authenticated_userid is None:
+        return Response(status=401, body=json.dumps({}), content_type='application/json')
     try:
+
         user_data = request.json_body
-        user_stmt = text('SELECT * from cocollector."Usuario" where "ID" = :id').bindparams(id=user_data['id'])
+        user_stmt = text('SELECT * from cocollector."Usuario" where "ID" = :id').bindparams(id=request.authenticated_userid)
         user: dict = json.loads(to_json(db.execute(user_stmt)))
         if 'nombre' in user_data:
             user['Nombre'] = user_data['nombre']
@@ -75,7 +83,8 @@ def _modify_user(request: Request) -> Response:
 
         update_stmt = text(
             'UPDATE cocollector."Usuario" SET "Nombre" = :nombre, "Apellido_paterno" = :apellido_paterno, "Nombre_usuario" = :nombre_usuario, "Correo" = :correo, "Contrasena" = :contrasena where "ID" = :id'
-        ).bindparams(nombre=user['Nombre'], apellido_paterno=user['Apellido_paterno'], nombre_usuario=user['Nombre_usuario'], correo=user['Correo'], contrasena=user['Contrasena'])
+        ).bindparams(nombre=user['Nombre'], apellido_paterno=user['Apellido_paterno'],
+                     nombre_usuario=user['Nombre_usuario'], correo=user['Correo'], contrasena=user['Contrasena'])
         db.execute(update_stmt)
 
     except Exception as e:
