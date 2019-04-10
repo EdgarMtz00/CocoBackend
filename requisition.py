@@ -18,6 +18,8 @@ def alchemyencoder(obj):
 
 def _get_req(request: Request) -> Response:
     req_id = request.params.get('id', -1)
+    if request.authenticated_userid:
+        req_id = request.authenticated_userid
     if req_id == -1:
         return Response(status=404)
     else:
@@ -26,7 +28,6 @@ def _get_req(request: Request) -> Response:
             stmt = stmt.bindparams(id=req_id)
 
             get_req: ResultProxy = db.execute(stmt)
-
 
             return Response(status=200,
                             body=json.dumps([dict(r) for r in get_req][0],
@@ -53,9 +54,11 @@ def _create_req(request: Request) -> Response:
 
 
 def _modify_req(request: Request) -> Response:
+    if request.authenticated_userid is None:
+        return Response(status=401, body=json.dumps({}), content_type='application/json')
     try:
         req_data = request.json_body
-        req_stmt = text('SELECT * from cocollector."Pedido" where "ID" = :id').bindparams(id=req_data['id'])
+        req_stmt = text('SELECT * from cocollector."Pedido" where "ID" = :id').bindparams(id=request.authenticated_userid)
         req: dict = json.loads((db.execute(req_stmt)))
         if 'total' in req_data:
             req['Total'] = req_data['total']
@@ -79,7 +82,6 @@ def _modify_req(request: Request) -> Response:
 
 def _delete_req(request: Request) -> Response:
     delete_data = request.json_body
-
     try:
         stmt: TextClause = text('DELETE FROM cocollector."Pedido" where "ID" = :id').bindparams(id=delete_data['id'])
 
