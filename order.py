@@ -50,7 +50,7 @@ def _modify_order(request: Request) -> Response:
         if 'estado' in order_data:
             order['Status'] = order_data['estado']
         if 'fechaPedido' in order_data:
-            order['Fecha_Pedido'] = order_data['fechaPedido']
+            order['Fecha_pedido'] = order_data['fechaPedido']
         if 'direccion' in order_data:
             order['Direccion'] = order_data['direccion']
         if 'usuario' in order_data:
