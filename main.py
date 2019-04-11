@@ -7,6 +7,7 @@ from pyramid.response import Response
 
 from login import login_entry
 from order import order_entry
+from requisition import req_entry
 from users import user_entry
 
 from products import product_entry
@@ -56,6 +57,8 @@ if __name__ == '__main__':
         config.add_route('users', '/usuarios')
         config.add_view(user_entry, route_name='users')
         config.add_route('order', '/orden')
+        config.add_route('req', '/pedido')
+        config.add_view(req_entry, route_name='req')
         config.add_view(order_entry, route_name='order', renderer='json')
         config.add_route('login', '/login')
         config.add_view(login_entry, route_name='login')

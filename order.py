@@ -21,7 +21,7 @@ def alchemyencoder(obj):
 
 
 def _get_order(request: Request) -> Response:
-    if (request.authenticated_userid):
+    if request.authenticated_userid is not None:
         try:
             order_data = request.params
             if 'id' in order_data:
@@ -40,8 +40,8 @@ def _get_order(request: Request) -> Response:
                         print(e)
                         return Response(status=404, content_type='text/plain')
 
-            if 'usuario' in order_data:
-                order_usuario = request.params.get('usuario', -1)
+            else:
+                order_usuario = request.authenticated_userid
                 if order_usuario == -1:
                     return Response(status=404)
                 else:
@@ -63,8 +63,9 @@ def _get_order(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+
 def _modify_order(request: Request) -> Response:
-    if(request.authenticated_userid):
+    if request.authenticated_userid:
         try:
             order_data = request.json_body
             order_stmt = text('SELECT * from cocollector."Orden" where "ID" = :id')
@@ -94,31 +95,37 @@ def _modify_order(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+
 def _create_order(request: Request) -> Response:
-    if (request.authenticated_userid):
+    if request.authenticated_userid:
         try:
             order_data = request.json_body
             stmt: TextClause = text('INSERT into cocollector."Orden"("Total",'
                                     '"Status",'
                                     '"Fecha_pedido",'
                                     '"Direccion",'
-                                    '"Usuario") VALUES (:total, :estado, :fecha_pedido, :direccion,'
-                                    ':usuario)')
-
-            stmt = stmt.bindparams(total=order_data['total'], estado=order_data['estado'],
-                                   fecha_pedido=order_data['fechaPedido'], direccion=order_data['direccion'],
+                                    '"Usuario") VALUES (:total, :estado, NOW(), :direccion,'
+                                    ':usuario) returning "ID"')
+            stmt = stmt.bindparams(total=order_data['total'],
+                                   estado=order_data['estado'],
+                                   direccion=order_data['direccion'],
                                    usuario=order_data['usuario'])
-            db.execute(stmt)
-            return Response(status=200)
+            id_order_data = db.execute(stmt)
+            id_order = [dict(r) for r in id_order_data][0]
+            return Response(status=200,
+                            content_type='application/json',
+                            charset='utf-8',
+                            body=json.dumps({'id': id_order['ID']}))
         except Exception as e:
-            print (e)
+            print(e)
             return Response(status=400)
     else:
         return Response(status=403, content_type='text/plain')
 
+
 def _delete_order(request: Request) -> Response:
 
-    if(request.authenticated_userid):
+    if request.authenticated_userid:
         delete_data = request.json_body
 
         try:
@@ -130,7 +137,8 @@ def _delete_order(request: Request) -> Response:
             return Response(status=404, content_type='text/plain')
     else:
         return Response(status=403, content_type='text/plain')
-    
+
+
 def order_entry(request: Request):
     if request.method == 'GET':
         return _get_order(request)
@@ -140,4 +148,7 @@ def order_entry(request: Request):
         return _modify_order(request)
     elif request.method == 'DELETE':
         return _delete_order(request)
-    return Response(status=405, content_type='text/json')
+    elif request.method == 'OPTIONS':
+        return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
+    return Response(status=405, content_type='application/json')
+

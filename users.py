@@ -26,10 +26,12 @@ def _get_user(request: Request) -> Response:
                                     '"Apellido_materno",'
                                     '"Tipo" from cocollector."Usuario" where "ID" = :id')
             stmt = stmt.bindparams(id=user_id)
+            result = db.execute(stmt)
 
-            get_user: ResultProxy = db.execute(stmt)
-            user_data = [dict(r) for r in get_user]
-            return Response(status=200, body=json.dumps(user_data[0]), content_type='text/json')
+            return Response(status=200,
+                            body=json.dumps([dict(r) for r in result][0]),
+                            content_type='application/json',
+                            charset='utf-8')
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
@@ -49,14 +51,20 @@ def _create_user(request: Request) -> Response:
                                 '"Fecha_Expiracion",'
                                 '"Tipo") VALUES (:nombre_usuario, :correo, :contrasena, '
                                 ":nombre, :apellido_paterno, :apellido_materno, :tarjeta, :fecha_expiracion, 'Usuario' )")
-
-        stmt = stmt.bindparams(nombre_usuario=user_data['nombreUsuario'], correo=user_data['correo'],
+        nombre_usuario = user_data['nombreUsuario']
+        stmt = stmt.bindparams(nombre_usuario=nombre_usuario, correo=user_data['correo'],
                                contrasena=user_data['contrasena'], nombre=user_data['nombre'],
                                apellido_paterno=user_data['apellidoPaterno'],
-                               apellido_materno=['apellidoMaterno'], tarjeta=['tarjeta'],
+                               apellido_materno=user_data['apellidoMaterno'], tarjeta=user_data['tarjeta'],
                                fecha_expiracion=user_data['fechaExpiracion'])
+
         db.execute(stmt)
-        return Response(status=200)
+        stmt = text('SELECT * FROM cocollector."Usuario" where "Nombre_usuario" = :username')
+        stmt = stmt.bindparams(username=nombre_usuario)
+        result = db.execute(stmt)
+        user_data = [dict(r) for r in result][0]
+        token = request.create_jwt_token(user_data['ID'])
+        return Response(status=200, charset='utf-8', content_type='application/json', body=json.dumps({'token': token}))
     except Exception as e:
         print(e)
         return Response(status=400)
@@ -74,6 +82,8 @@ def _modify_user(request: Request) -> Response:
             user['Nombre'] = user_data['nombre']
         if 'apellidoPaterno' in user_data:
             user['Apellido_paterno'] = user_data['apellidoPaterno']
+        if 'apellidoMaterno' in user_data:
+            user['Apellido_materno'] = user_data['apellidoMaterno']
         if 'nombreDeUsuario' in user_data:
             user['Nombre_usuario'] = user_data['nombreDeUsuario']
         if 'correo' in user_data:
@@ -82,9 +92,10 @@ def _modify_user(request: Request) -> Response:
             user['Contrasena'] = user_data['contrasena']
 
         update_stmt = text(
-            'UPDATE cocollector."Usuario" SET "Nombre" = :nombre, "Apellido_paterno" = :apellido_paterno, "Nombre_usuario" = :nombre_usuario, "Correo" = :correo, "Contrasena" = :contrasena where "ID" = :id'
+            'UPDATE cocollector."Usuario" SET "Nombre" = :nombre, "Apellido_paterno" = :apellido_paterno, "Apellido_materno" = :apellido_materno, "Nombre_usuario" = :nombre_usuario, "Correo" = :correo, "Contrasena" = :contrasena where "ID" = :id'
         ).bindparams(nombre=user['Nombre'], apellido_paterno=user['Apellido_paterno'],
-                     nombre_usuario=user['Nombre_usuario'], correo=user['Correo'], contrasena=user['Contrasena'])
+                     nombre_usuario=user['Nombre_usuario'], correo=user['Correo'], contrasena=user['Contrasena'],
+                     apellido_materno=user['Apellido_materno'])
         db.execute(update_stmt)
 
     except Exception as e:
@@ -99,4 +110,6 @@ def user_entry(request: Request):
         return _create_user(request)
     elif request.method == 'PUT':
         return _modify_user(request)
+    elif request.method == 'OPTIONS':
+        return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')

@@ -40,16 +40,15 @@ def _get_req(request: Request) -> Response:
 def _create_req(request: Request) -> Response:
     try:
         req_data = request.json_body
-        stmt: TextClause = text('INSERT into cocollector."Pedido"("Total",''"Cantidad",'
-                                '"Orden",''"Producto") VALUES (:total, :cantidad, :orden, :producto)')
-
-        stmt = stmt.bindparams(total=req_data['total'], cantidad=req_data['cantidad'],
-                               orden=req_data['orden'], producto=req_data['producto'])
-
-        db.execute(stmt)
+        for req in req_data:
+            stmt: TextClause = text('INSERT into cocollector."Pedido"("Total",''"Cantidad",'
+                                    '"Orden",''"Producto") VALUES (:total, :cantidad, :orden, :producto)')
+            stmt = stmt.bindparams(total=req['total'], cantidad=req['cantidad'],
+                               orden=req['orden'], producto=req['producto'])
+            db.execute(stmt)
         return Response(status=200)
     except Exception as e:
-        print (e)
+        print(e)
         return Response(status=400)
 
 
@@ -80,6 +79,7 @@ def _modify_req(request: Request) -> Response:
         return Response(status=404, content_type='text/json')
 
 
+
 def _delete_req(request: Request) -> Response:
     delete_data = request.json_body
     try:
@@ -94,6 +94,7 @@ def _delete_req(request: Request) -> Response:
         print(e)
         return Response(status=404, content_type='text/plain')
 
+
 def req_entry(request: Request):
     if request.method == 'GET':
         return _get_req(request)
@@ -103,4 +104,6 @@ def req_entry(request: Request):
         return _modify_req(request)
     elif request.method == 'DELETE':
         return _delete_req(request)
+    elif request.method == 'OPTIONS':
+        return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')
