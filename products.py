@@ -11,6 +11,7 @@ from query_to_json import to_json
 
 import decimal, datetime
 
+
 def alchemyencoder(obj):
     """JSON encoder function for SQLAlchemy special classes."""
     if isinstance(obj, datetime.date):
@@ -66,6 +67,7 @@ def _create_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+      
 def _modify_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
@@ -111,15 +113,14 @@ def _modify_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+      
 def _delete_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
             product_data = request.json_body
             stmt = text('DELETE FROM cocollector."Producto" WHERE "ID_Producto" = :id')
             stmt = stmt.bindparams(id = product_data['id'])
-
             db.execute(stmt)
-
             return Response(status = 200)
         except Exception as e:
             print(e)
@@ -127,6 +128,7 @@ def _delete_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/json')
 
+      
 def product_entry(request: Request):
     if request.method == 'GET':
         return _get_product(request)
@@ -136,4 +138,4 @@ def product_entry(request: Request):
         return _modify_product(request)
     elif request.method == 'DELETE':
         return _delete_product(request)
-    return Response(status = 405, content_type = 'text/json')
+    return Response(status=405, content_type='text/json')
