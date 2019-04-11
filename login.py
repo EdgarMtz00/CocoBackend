@@ -11,8 +11,9 @@ import json
 
 @view_config(request_method='POST')
 def login_entry(request):
-    username = request.json_body['nombreUsuario']
-    password = request.json_body['contrasena']
+    body = request.json_body
+    username = request.json_body['User']
+    password = request.json_body['Password']
 
     try:
         stmt: TextClause = text('SELECT "ID" from cocollector."Usuario" where "Nombre_usuario" = :username AND "Contrasena" = :password')
