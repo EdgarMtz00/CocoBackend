@@ -25,7 +25,14 @@ def _get_product(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
+            stmt: TextClause = text('select *,'
+                                    '(select "Ruta" AS img1 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 0),'
+                                    '(select "Ruta" AS img2 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 1),'
+                                    '(select "Ruta" AS img3 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 2),'
+                                    '(select "Ruta" AS img4 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 3),'
+                                    '(select "Ruta" AS img5 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 4)'
+                                    'from cocollector."Producto" where "ID_Producto"= :id')
+            #stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
             stmt = stmt.bindparams(id = product_id)
             
             get_product: ResultProxy = db.execute(stmt)
