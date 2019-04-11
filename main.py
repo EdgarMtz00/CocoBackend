@@ -14,6 +14,7 @@ from products import product_entry
 from pyramid.renderers import JSON
 
 import datetime
+from category import category_entry
 
 
 def hello_world(request):
@@ -61,6 +62,8 @@ if __name__ == '__main__':
         config.add_view(order_entry, route_name='order', renderer='json')
         config.add_route('login', '/login')
         config.add_view(login_entry, route_name='login')
+        config.add_route('category', '/categorias')
+        config.add_view(category_entry, route_name='category')
         app = config.make_wsgi_app()
     server = make_server('0.0.0.0', 6543, app)
     server.serve_forever()

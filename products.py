@@ -11,6 +11,7 @@ from query_to_json import to_json
 
 import decimal, datetime
 
+
 def alchemyencoder(obj):
     """JSON encoder function for SQLAlchemy special classes."""
     if isinstance(obj, datetime.date):
@@ -21,19 +22,24 @@ def alchemyencoder(obj):
 
 def _get_product(request: Request) -> Response:
     product_id = request.params.get('id', -1)
-    if product_id == -1:
-        return Response(status=404)
-    else:
-        try:
+    category_id = request.params.get('idCategoria', -1)
+    try:
+        if product_id != -1:
             stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
-            stmt = stmt.bindparams(id = product_id)
-            
-            get_product: ResultProxy = db.execute(stmt)
-            
-            return Response(status = 200, body = json.dumps([dict(r) for r in get_product][0], default = alchemyencoder), content_type = 'text/json')
-        except Exception as e:
-            print(e)
-            return Response(status = 404, content_type = 'text/plain')
+            stmt = stmt.bindparams(id=product_id)
+        elif category_id != -1:
+            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "Categoria" = :categoryId')
+            stmt = stmt.bindparams(categoryId=category_id)
+        else:
+            stmt: TextClause = text('SELECT * FROM cocollector."Producto"')
+
+        get_product: ResultProxy = db.execute(stmt)
+        return Response(status=200, body=json.dumps([dict(r) for r in get_product], default=alchemyencoder),
+                        content_type='text/json')
+    except Exception as e:
+        print(e)
+        return Response(status=404, content_type='text/plain')
+
 
 def _create_product(request: Request) -> Response:
     if(request.authenticated_userid):
@@ -59,6 +65,7 @@ def _create_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+      
 def _modify_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
@@ -104,15 +111,14 @@ def _modify_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
+      
 def _delete_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
             product_data = request.json_body
             stmt = text('DELETE FROM cocollector."Producto" WHERE "ID_Producto" = :id')
             stmt = stmt.bindparams(id = product_data['id'])
-
             db.execute(stmt)
-
             return Response(status = 200)
         except Exception as e:
             print(e)
@@ -120,6 +126,7 @@ def _delete_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/json')
 
+      
 def product_entry(request: Request):
     if request.method == 'GET':
         return _get_product(request)
@@ -129,4 +136,4 @@ def product_entry(request: Request):
         return _modify_product(request)
     elif request.method == 'DELETE':
         return _delete_product(request)
-    return Response(status = 405, content_type = 'text/json')
+    return Response(status=405, content_type='text/json')
