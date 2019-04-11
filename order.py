@@ -60,7 +60,8 @@ def _get_order(request: Request) -> Response:
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
-
+    else:
+        return Response(status=403, content_type='text/plain')
 
 def _modify_order(request: Request) -> Response:
     if(request.authenticated_userid):
@@ -90,6 +91,8 @@ def _modify_order(request: Request) -> Response:
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/json')
+    else:
+        return Response(status=403, content_type='text/plain')
 
 def _create_order(request: Request) -> Response:
     if (request.authenticated_userid):
@@ -110,7 +113,8 @@ def _create_order(request: Request) -> Response:
         except Exception as e:
             print (e)
             return Response(status=400)
-
+    else:
+        return Response(status=403, content_type='text/plain')
 
 def _delete_order(request: Request) -> Response:
 
@@ -124,7 +128,9 @@ def _delete_order(request: Request) -> Response:
         except Exception as e:
             print(e)
             return Response(status=404, content_type='text/plain')
-
+    else:
+        return Response(status=403, content_type='text/plain')
+    
 def order_entry(request: Request):
     if request.method == 'GET':
         return _get_order(request)
