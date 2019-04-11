@@ -8,7 +8,7 @@ from pyramid.response import Response
 from login import login_entry
 from order import order_entry
 from users import user_entry
-
+from product_image import product_image_entry
 from products import product_entry
 
 from pyramid.renderers import JSON
@@ -48,10 +48,13 @@ if __name__ == '__main__':
         config.set_authorization_policy(ACLAuthorizationPolicy())
         # Enable JWT authentication.
         config.include('pyramid_jwt')
+
         config.set_jwt_authentication_policy('secret')
 
         config.add_route('products', '/productos')  # localhost:6543/
         config.add_view(product_entry, route_name='products')
+        config.add_route('product_image', '/producto-imagen')
+        config.add_view(product_image_entry, route_name='product_image')
         config.add_renderer('json', json_renderer)
         config.add_route('users', '/usuarios')
         config.add_view(user_entry, route_name='users')
