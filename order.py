@@ -21,22 +21,46 @@ def alchemyencoder(obj):
 
 
 def _get_order(request: Request) -> Response:
-    if(request.authenticated_userid):
-        order_id = request.params.get('id', -1)
-        if order_id == -1:
-            return Response(status=404)
-        else:
-            try:
-                stmt: TextClause = text('SELECT * from cocollector."Orden" where "ID"= :id')
-                stmt = stmt.bindparams(id=order_id)
+    if (request.authenticated_userid):
+        try:
+            order_data = request.params
+            if 'id' in order_data:
+                order_id = request.params.get('id', -1)
+                if order_id == -1:
+                    return Response(status=404)
+                else:
+                    try:
+                        stmt: TextClause = text('SELECT * from cocollector."Orden" where "ID"= :id')
+                        stmt = stmt.bindparams(id=order_id)
 
-                get_order: ResultProxy = db.execute(stmt)
+                        get_order: ResultProxy = db.execute(stmt)
 
+                        return Response(status=200, body=json.dumps([dict(r) for r in get_order][0], default=alchemyencoder), content_type='text/json')
+                    except Exception as e:
+                        print(e)
+                        return Response(status=404, content_type='text/plain')
 
-                return Response(status=200, body=json.dumps([dict(r) for r in get_order][0], default=alchemyencoder), content_type='text/json')
-            except Exception as e:
-                print(e)
-                return Response(status=404, content_type='text/plain')
+            if 'usuario' in order_data:
+                order_usuario = request.params.get('usuario', -1)
+                if order_usuario == -1:
+                    return Response(status=404)
+                else:
+                    try:
+                        stmt: TextClause = text('SELECT * from cocollector."Orden" where "Usuario"= :usuario')
+                        stmt = stmt.bindparams(usuario=order_usuario)
+
+                        get_order: ResultProxy = db.execute(stmt)
+
+                        return Response(status=200,
+                                        body=json.dumps([dict(r) for r in get_order], default=alchemyencoder),
+                                        content_type='text/json')
+                    except Exception as e:
+                        print(e)
+                        return Response(status=404, content_type='text/plain')
+        except Exception as e:
+            print(e)
+            return Response(status=404, content_type='text/plain')
+
 
 def _modify_order(request: Request) -> Response:
     if(request.authenticated_userid):
@@ -68,7 +92,7 @@ def _modify_order(request: Request) -> Response:
             return Response(status=404, content_type='text/json')
 
 def _create_order(request: Request) -> Response:
-    if(request.authenticated_userid):
+    if (request.authenticated_userid):
         try:
             order_data = request.json_body
             stmt: TextClause = text('INSERT into cocollector."Orden"("Total",'
@@ -111,5 +135,3 @@ def order_entry(request: Request):
     elif request.method == 'DELETE':
         return _delete_order(request)
     return Response(status=405, content_type='text/json')
-
-
