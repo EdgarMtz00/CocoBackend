@@ -7,6 +7,7 @@ from sqlalchemy.sql.elements import TextClause
 
 from database import db
 
+#Método para subir la una imagen de un producto.
 def _upload_image(request: Request):
     if(request.authenticated_userid):
         image_data = request.json_body
@@ -21,7 +22,7 @@ def _upload_image(request: Request):
     else:
         return Response(status=403, content_type='text/plain')
 
-
+#Método para obtener la una imagen de un producto.
 def _get_image(request: Request):
     try:
         id_imagen = request.json_body['id']
@@ -37,7 +38,7 @@ def _get_image(request: Request):
         print(e)
         return Response(status=400)
 
-
+#Dependiendo del método usado en el request se ejecuta alguno de los 4 métodos disponibles para producto.      
 def product_image_entry(request: Request):
     if request.method == 'POST':
         return _upload_image(request)
