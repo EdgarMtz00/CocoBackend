@@ -22,26 +22,29 @@ def alchemyencoder(obj):
 
 def _get_product(request: Request) -> Response:
     product_id = request.params.get('id', -1)
-    if product_id == -1:
-        return Response(status=404)
-    else:
-        try:
-            stmt: TextClause = text('select *,'
-                                    '(select "Ruta" AS img1 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 0),'
-                                    '(select "Ruta" AS img2 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 1),'
-                                    '(select "Ruta" AS img3 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 2),'
-                                    '(select "Ruta" AS img4 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 3),'
-                                    '(select "Ruta" AS img5 from cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 4)'
-                                    'from cocollector."Producto" where "ID_Producto"= :id')
-            #stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
-            stmt = stmt.bindparams(id = product_id)
-            
-            get_product: ResultProxy = db.execute(stmt)
-            
-            return Response(status = 200, body = json.dumps([dict(r) for r in get_product][0], default = alchemyencoder), content_type = 'text/json')
-        except Exception as e:
-            print(e)
-            return Response(status = 404, content_type = 'text/plain')
+    category_id = request.params.get('idCategoria', -1)
+    try:
+        if product_id != -1:
+            stmt: TextClause = text('SELECT *,'
+                                    '(SELECT "Ruta" AS img1 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 0),'
+                                    '(SELECT "Ruta" AS img2 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 1),'
+                                    '(SELECT "Ruta" AS img3 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 2),'
+                                    '(SELECT "Ruta" AS img4 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 3),'
+                                    '(SELECT "Ruta" AS img5 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 4)'
+                                    'FROM cocollector."Producto" where "ID_Producto"= :id')
+            stmt = stmt.bindparams(id=product_id)
+        elif category_id != -1:
+            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "Categoria" = :categoryId')
+            stmt = stmt.bindparams(categoryId=category_id)
+        else:
+            stmt: TextClause = text('SELECT * FROM cocollector."Producto"')
+
+        get_product: ResultProxy = db.execute(stmt)
+        return Response(status=200, body=json.dumps([dict(r) for r in get_product], default=alchemyencoder),
+                        content_type='text/json')
+    except Exception as e:
+        print(e)
+        return Response(status=404, content_type='text/plain')
 
 def _create_product(request: Request) -> Response:
     if(request.authenticated_userid):
