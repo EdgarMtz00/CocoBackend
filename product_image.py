@@ -2,7 +2,6 @@ import json
 
 from pyramid.response import Response, FileResponse
 from pyramid.request import Request
-from pyramid_storage.exceptions import FileNotAllowed
 from sqlalchemy import text
 from sqlalchemy.sql.elements import TextClause
 
@@ -16,7 +15,7 @@ def _upload_image(request: Request):
             stmt = stmt.bindparams(ruta=image_data['ruta'], producto=image_data['id'])
             db.execute(stmt)
             return Response(status=200)
-        except FileNotAllowed:
+        except Exception as e:
             request.session.flash("Archivo no permitido")
         return Response(status=200)
     else:
