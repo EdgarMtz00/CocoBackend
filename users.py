@@ -64,7 +64,10 @@ def _create_user(request: Request) -> Response:
         result = db.execute(stmt)
         user_data = [dict(r) for r in result][0]
         token = request.create_jwt_token(user_data['ID'])
-        return Response(status=200, charset='utf-8', content_type='application/json', body=json.dumps({'token': token}))
+        return Response(status=200, charset='utf-8', content_type='application/json', body=json.dumps({
+            'token': token,
+            'userType': user_data['Tipo']
+        }))
     except Exception as e:
         print(e)
         return Response(status=400)
@@ -77,7 +80,8 @@ def _modify_user(request: Request) -> Response:
 
         user_data = request.json_body
         user_stmt = text('SELECT * from cocollector."Usuario" where "ID" = :id').bindparams(id=request.authenticated_userid)
-        user: dict = json.loads(to_json(db.execute(user_stmt)))
+        user_req = db.execute(user_stmt)
+        user = [dict(r) for r in user_req][0]
         if 'nombre' in user_data:
             user['Nombre'] = user_data['nombre']
         if 'apellidoPaterno' in user_data:
@@ -95,9 +99,9 @@ def _modify_user(request: Request) -> Response:
             'UPDATE cocollector."Usuario" SET "Nombre" = :nombre, "Apellido_paterno" = :apellido_paterno, "Apellido_materno" = :apellido_materno, "Nombre_usuario" = :nombre_usuario, "Correo" = :correo, "Contrasena" = :contrasena where "ID" = :id'
         ).bindparams(nombre=user['Nombre'], apellido_paterno=user['Apellido_paterno'],
                      nombre_usuario=user['Nombre_usuario'], correo=user['Correo'], contrasena=user['Contrasena'],
-                     apellido_materno=user['Apellido_materno'])
+                     apellido_materno=user['Apellido_materno'], id=request.authenticated_userid)
         db.execute(update_stmt)
-
+        return Response(status=200)
     except Exception as e:
         print(e)
         return Response(status=404, content_type='text/json')
