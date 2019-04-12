@@ -148,4 +148,6 @@ def product_entry(request: Request):
         return _modify_product(request)
     elif request.method == 'DELETE':
         return _delete_product(request)
+    elif request.method == 'OPTIONS':
+        return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')
