@@ -19,13 +19,20 @@ def alchemyencoder(obj):
     elif isinstance(obj, decimal.Decimal):
         return float(obj)
 
-
+#Método que recibe un Request con un id ya sea de categoría o de producto mediante GET y dependiendo de lo que se haya
+#pedido retorna un objeto JSON con todos las columnas de la tabla y las 5 rutas de imagen relacionadas a ese producto
 def _get_product(request: Request) -> Response:
     product_id = request.params.get('id', -1)
     category_id = request.params.get('idCategoria', -1)
     try:
         if product_id != -1:
-            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "ID_Producto" = :id')
+            stmt: TextClause = text('SELECT *,'
+                                    '(SELECT "Ruta" AS img1 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 0),'
+                                    '(SELECT "Ruta" AS img2 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 1),'
+                                    '(SELECT "Ruta" AS img3 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 2),'
+                                    '(SELECT "Ruta" AS img4 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 3),'
+                                    '(SELECT "Ruta" AS img5 FROM cocollector."Imagen" WHERE "Producto" = :id LIMIT 1 OFFSET 4)'
+                                    'FROM cocollector."Producto" where "ID_Producto"= :id')
             stmt = stmt.bindparams(id=product_id)
         elif category_id != -1:
             stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "Categoria" = :categoryId')
@@ -40,7 +47,8 @@ def _get_product(request: Request) -> Response:
         print(e)
         return Response(status=404, content_type='text/plain')
 
-
+#Método para crear un producto, sólo puede ser ejecutado por un usuario de tipo administrador. La verificación se realiza
+#mediante un token. Se obtienen todos los parámetros a ingresar por medio de un Request.
 def _create_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
@@ -65,7 +73,10 @@ def _create_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
-      
+
+#Método para modificar un producto, sólo puede ser ejecutado por un usuario de tipo administrador. La verificación se realiza
+#mediante un token. Se obtienen todos los parámetros que se quierean modifica rpor medio de un request. Sólo es necesario mandar
+#los campos que se deseen modificar en la tabla.
 def _modify_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
@@ -111,7 +122,8 @@ def _modify_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/plain')
 
-      
+#Método para eliminar un producto, sólo puede ser ejecutado por un usuario de tipo administrador. La verificación se realiza
+#mediante un token. Se obtieneel id del producto a eliminar en el Request.
 def _delete_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
@@ -126,7 +138,7 @@ def _delete_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/json')
 
-      
+#Dependiendo del método usado en el request se ejecuta alguno de los 4 métodos disponibles para producto.      
 def product_entry(request: Request):
     if request.method == 'GET':
         return _get_product(request)
