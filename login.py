@@ -25,7 +25,9 @@ def login_entry(request):
             token = request.create_jwt_token(user['ID'])
             return Response(status=200, content_type='application/json', body=json.dumps({
                 'token': token,
-                'userType': user['Tipo']
+                'userType': user['Tipo'],
+                'hola' : 'hola',
+                'id': user['ID']
             }), charset='utf-8')
     except Exception as e:
         return Response(status=404, content_type='application/json')

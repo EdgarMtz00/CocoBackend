@@ -7,6 +7,7 @@ from sqlalchemy.sql.elements import TextClause
 from database import db
 import json
 
+from order import alchemyencoder
 from query_to_json import to_json
 
 
@@ -18,18 +19,12 @@ def _get_user(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT "ID", '
-                                    '"Nombre_usuario",'
-                                    '"Correo",'
-                                    '"Nombre", '
-                                    '"Apellido_paterno", '
-                                    '"Apellido_materno",'
-                                    '"Tipo" from cocollector."Usuario" where "ID" = :id')
+            stmt: TextClause = text('SELECT * from cocollector."Usuario" where "ID" = :id')
             stmt = stmt.bindparams(id=user_id)
             result = db.execute(stmt)
 
             return Response(status=200,
-                            body=json.dumps([dict(r) for r in result][0]),
+                            body=json.dumps([dict(r) for r in result][0], default=alchemyencoder),
                             content_type='application/json',
                             charset='utf-8')
         except Exception as e:

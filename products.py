@@ -35,10 +35,22 @@ def _get_product(request: Request) -> Response:
                                     'FROM cocollector."Producto" where "ID_Producto"= :id')
             stmt = stmt.bindparams(id=product_id)
         elif category_id != -1:
-            stmt: TextClause = text('SELECT * FROM cocollector."Producto" WHERE "Categoria" = :categoryId')
+            stmt: TextClause = text('SELECT *,'
+'(SELECT "Ruta" AS img1 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 0),'
+'(SELECT "Ruta" AS img2 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 1),'
+'(SELECT "Ruta" AS img3 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 2),'
+'(SELECT "Ruta" AS img4 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 3),'
+'(SELECT "Ruta" AS img5 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 4)'
+'FROM cocollector."Producto" WHERE "Categoria" = :categoryId')
             stmt = stmt.bindparams(categoryId=category_id)
         else:
-            stmt: TextClause = text('SELECT * FROM cocollector."Producto"')
+            stmt: TextClause = text('SELECT *,'
+'(SELECT "Ruta" AS img1 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 0),'
+'(SELECT "Ruta" AS img2 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 1),'
+'(SELECT "Ruta" AS img3 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 2),'
+'(SELECT "Ruta" AS img4 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 3),'
+'(SELECT "Ruta" AS img5 FROM cocollector."Imagen" WHERE cocollector."Producto"."ID_Producto" = cocollector."Imagen"."Producto" LIMIT 1 OFFSET 4)'
+'FROM cocollector."Producto"')
 
         get_product: ResultProxy = db.execute(stmt)
         return Response(status=200, body=json.dumps([dict(r) for r in get_product], default=alchemyencoder),
