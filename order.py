@@ -111,7 +111,7 @@ def _create_order(request: Request) -> Response:
             stmt = stmt.bindparams(total=order_data['total'],
                                    estado=order_data['estado'],
                                    direccion=order_data['direccion'],
-                                   usuario=order_data['usuario'])
+                                   usuario=request.authenticated_userid)
             #test: TextClause = text('INSERT INTO bancoco."Transaccion"("Monto","Fecha","Descripcion","Institucion","Tarjeta")'
             #                        'VALUES (:monto, NOW,:des, :ins, (SELECT "Tarjeta" FROM cocollector."Usuario" WHERE "") )')
             id_order_data = db.execute(stmt)
@@ -121,7 +121,7 @@ def _create_order(request: Request) -> Response:
             current_user_data = [dict(r) for r in user_result][0]
 
             id_order = [dict(r) for r in id_order_data][0]
-            conn = HTTPConnection('192.168.137.121', 6543, timeout=10000)
+            conn = HTTPConnection('192.168.84.75', 6543, timeout=10000)
             conn.request('POST', '/transaccion', json.dumps({
                 'monto': order_data['total'] * -1,
                 'descripcion': 'compra en tienda',

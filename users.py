@@ -19,7 +19,22 @@ def _get_user(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT * from cocollector."Usuario" where "ID" = :id')
+            '''stmt: TextClause = text("""
+            select "Usuario"."ID",
+       "Nombre_usuario",
+       "Correo",
+       "Nombre",
+       "Apellido_paterno",
+       "Apellido_materno",
+       "Tipo",
+       "Direcciones"."Calle_y_numero",
+       "Direcciones"."Ciudad",
+       "CP"
+from "Usuario"
+       inner join "Direcciones" on "Usuario"."ID" = "Direcciones"."Usuario"
+where "Usuario"."ID" = :id
+""")'''
+            stmt: TextClause = text('SELECT "ID", "Nombre_usuario", "Correo", "Nombre", "Apellido_paterno", "Apellido_materno", "Tipo" from cocollector."Usuario" where "ID" = :id')
             stmt = stmt.bindparams(id=user_id)
             result = db.execute(stmt)
 
@@ -101,7 +116,6 @@ def _modify_user(request: Request) -> Response:
         print(e)
         return Response(status=404, content_type='text/json')
 
-
 def user_entry(request: Request):
     if request.method == 'GET':
         return _get_user(request)
@@ -112,3 +126,4 @@ def user_entry(request: Request):
     elif request.method == 'OPTIONS':
         return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')
+
