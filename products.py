@@ -128,8 +128,10 @@ def _delete_product(request: Request) -> Response:
     if(request.authenticated_userid):
         try:
             product_data = request.json_body
-            stmt = text('DELETE FROM cocollector."Producto" WHERE "ID_Producto" = :id')
-            stmt = stmt.bindparams(id = product_data['id'])
+            stmt = text('DELETE FROM cocollector."Imagen" WHERE "Producto" = :producto;'
+                        'DELETE FROM cocollector."Producto" WHERE "ID_Producto" = :id')
+            stmt = stmt.bindparams(producto = product_data['id'], 
+                                   id = product_data['id'])
             db.execute(stmt)
             return Response(status = 200)
         except Exception as e:
@@ -138,7 +140,7 @@ def _delete_product(request: Request) -> Response:
     else:
         return Response(status=403, content_type='text/json')
 
-#Dependiendo del método usado en el request se ejecuta alguno de los 4 métodos disponibles para producto.      
+#Dependiendo del método usado en el request se ejecuta alguno de los métodos disponibles para producto.      
 def product_entry(request: Request):
     if request.method == 'GET':
         return _get_product(request)
@@ -148,4 +150,6 @@ def product_entry(request: Request):
         return _modify_product(request)
     elif request.method == 'DELETE':
         return _delete_product(request)
+    elif request.method == 'OPTIONS':
+        return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')
