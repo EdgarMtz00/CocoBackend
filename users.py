@@ -51,6 +51,15 @@ def _create_user(request: Request) -> Response:
     try:
         user_data = request.json_body
         print(user_data)
+
+        stmt: TextClause = text('select * from bancoco."Cuentahabiente" where "Tarjeta" = :tarjeta and "Fecha_Expiracion" = :fecha')
+
+        stmt = stmt.bindparams(tarjeta=user_data['tarjeta'], fecha=user_data['fechaExpiracion'])
+        result = db.execute(stmt)
+        data = [dict(r) for r in result]
+        if data.__len__() == 0:
+            return Response(status=400)
+
         stmt: TextClause = text('INSERT into cocollector."Usuario"("Nombre_usuario",'
                                 '"Correo",'
                                 '"Contrasena",'
