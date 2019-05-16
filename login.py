@@ -14,6 +14,8 @@ def login_entry(request):
     body = request.json_body
     username = request.json_body['User']
     password = request.json_body['Password']
+    if username is None or password is None:
+        return Response(status=400, content_type='application/json')
 
     try:
         stmt: TextClause = text('SELECT "ID", "Tipo" from cocollector."Usuario" where "Nombre_usuario" = :username AND "Contrasena" = :password')
