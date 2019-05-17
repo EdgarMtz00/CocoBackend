@@ -14,6 +14,8 @@ def login_entry(request):
     body = request.json_body
     username = request.json_body['User']
     password = request.json_body['Password']
+    if username is None or password is None:
+        return Response(status=400, content_type='application/json')
 
     try:
         stmt: TextClause = text('SELECT "ID", "Tipo" from cocollector."Usuario" where "Nombre_usuario" = :username AND "Contrasena" = :password')
@@ -25,7 +27,9 @@ def login_entry(request):
             token = request.create_jwt_token(user['ID'])
             return Response(status=200, content_type='application/json', body=json.dumps({
                 'token': token,
-                'userType': user['Tipo']
+                'userType': user['Tipo'],
+                'hola' : 'hola',
+                'id': user['ID']
             }), charset='utf-8')
     except Exception as e:
         return Response(status=404, content_type='application/json')

@@ -7,6 +7,7 @@ from sqlalchemy.sql.elements import TextClause
 from database import db
 import json
 
+from order import alchemyencoder
 from query_to_json import to_json
 
 
@@ -18,18 +19,27 @@ def _get_user(request: Request) -> Response:
         return Response(status=404)
     else:
         try:
-            stmt: TextClause = text('SELECT "ID", '
-                                    '"Nombre_usuario",'
-                                    '"Correo",'
-                                    '"Nombre", '
-                                    '"Apellido_paterno", '
-                                    '"Apellido_materno",'
-                                    '"Tipo" from cocollector."Usuario" where "ID" = :id')
+            '''stmt: TextClause = text("""
+            select "Usuario"."ID",
+       "Nombre_usuario",
+       "Correo",
+       "Nombre",
+       "Apellido_paterno",
+       "Apellido_materno",
+       "Tipo",
+       "Direcciones"."Calle_y_numero",
+       "Direcciones"."Ciudad",
+       "CP"
+from "Usuario"
+       inner join "Direcciones" on "Usuario"."ID" = "Direcciones"."Usuario"
+where "Usuario"."ID" = :id
+""")'''
+            stmt: TextClause = text('SELECT "ID", "Nombre_usuario", "Correo", "Nombre", "Apellido_paterno", "Apellido_materno", "Tipo" from cocollector."Usuario" where "ID" = :id')
             stmt = stmt.bindparams(id=user_id)
             result = db.execute(stmt)
 
             return Response(status=200,
-                            body=json.dumps([dict(r) for r in result][0]),
+                            body=json.dumps([dict(r) for r in result][0], default=alchemyencoder),
                             content_type='application/json',
                             charset='utf-8')
         except Exception as e:
@@ -41,6 +51,15 @@ def _create_user(request: Request) -> Response:
     try:
         user_data = request.json_body
         print(user_data)
+
+        stmt: TextClause = text('select * from bancoco."Cuentahabiente" where "Tarjeta" = :tarjeta and "Fecha_Expiracion" = :fecha')
+
+        stmt = stmt.bindparams(tarjeta=user_data['tarjeta'], fecha=user_data['fechaExpiracion'])
+        result = db.execute(stmt)
+        data = [dict(r) for r in result]
+        if data.__len__() == 0:
+            return Response(status=400)
+
         stmt: TextClause = text('INSERT into cocollector."Usuario"("Nombre_usuario",'
                                 '"Correo",'
                                 '"Contrasena",'
@@ -106,7 +125,6 @@ def _modify_user(request: Request) -> Response:
         print(e)
         return Response(status=404, content_type='text/json')
 
-
 def user_entry(request: Request):
     if request.method == 'GET':
         return _get_user(request)
@@ -117,3 +135,4 @@ def user_entry(request: Request):
     elif request.method == 'OPTIONS':
         return Response(status=200, content_type='application/json', body=json.dumps({}), charset='utf-8')
     return Response(status=405, content_type='text/json')
+

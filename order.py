@@ -1,3 +1,5 @@
+from http.client import HTTPConnection
+
 from pyramid.response import Response
 from pyramid.request import Request
 from sqlalchemy import text
@@ -109,9 +111,35 @@ def _create_order(request: Request) -> Response:
             stmt = stmt.bindparams(total=order_data['total'],
                                    estado=order_data['estado'],
                                    direccion=order_data['direccion'],
-                                   usuario=order_data['usuario'])
+                                   usuario=request.authenticated_userid)
+            #test: TextClause = text('INSERT INTO bancoco."Transaccion"("Monto","Fecha","Descripcion","Institucion","Tarjeta")'
+            #                        'VALUES (:monto, NOW,:des, :ins, (SELECT "Tarjeta" FROM cocollector."Usuario" WHERE "") )')
             id_order_data = db.execute(stmt)
+            stmt: TextClause = text('SELECT * from "BDCocoProyecto".cocollector."Usuario" where "ID" = :id')
+            stmt = stmt.bindparams(id=request.authenticated_userid)
+            user_result = db.execute(stmt)
+            current_user_data = [dict(r) for r in user_result][0]
+
             id_order = [dict(r) for r in id_order_data][0]
+            conn = HTTPConnection('192.168.84.75', 6543, timeout=10000)
+            conn.request('POST', '/transaccion', json.dumps({
+                'monto': order_data['total'] * -1,
+                'descripcion': 'compra en tienda',
+                'institucion': 'cocollector',
+                'tarjeta': current_user_data['Tarjeta_credito']
+            }))
+
+            if conn.getresponse().code == 200:
+                status = 'Confirmado'
+                stmt = text('UPDATE cocollector."Orden" set "Status" = :status where "BDCocoProyecto".cocollector."Orden"."ID" = :order_id')
+                stmt = stmt.bindparams(order_id=id_order['ID'], status=status)
+                db.execute(stmt)
+            else:
+                status = 'Rechazado'
+                stmt = text('UPDATE cocollector."Orden" set "Status" = :status where "BDCocoProyecto".cocollector."Orden"."ID" = :order_id')
+                stmt = stmt.bindparams(order_id=id_order['ID'], status=status)
+                db.execute(stmt)
+
             return Response(status=200,
                             content_type='application/json',
                             charset='utf-8',
